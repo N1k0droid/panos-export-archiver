@@ -1,0 +1,6 @@
+# Batch files are stored as-is with Windows line endings (cmd.exe needs CRLF to find labels)
+*.bat   -text
+*.cmd   -text
+*.yaml  text eol=lf
+*.md    text
+LICENSE text

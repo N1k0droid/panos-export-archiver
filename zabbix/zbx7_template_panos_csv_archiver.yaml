@@ -1,0 +1,803 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: cecc260486f2471cbf479fe4e9b5f240
+      name: Templates/Applications
+  templates:
+    - uuid: 0963b4b2a5d441c8910d729f3702fa73
+      template: 'PAN-OS CSV Archiver by Zabbix trapper'
+      name: 'PAN-OS CSV Archiver by Zabbix trapper'
+      description: 'Discovery-based monitoring of the Palo Alto CSV archive jobs (panos_csv_archiver.bat 1.0.0).'
+      vendor:
+        name: N1k0droid
+        version: 1.0.0
+      groups:
+        - name: Templates/Applications
+      discovery_rules:
+        - uuid: be55c97356564f6380f26bca075a3f1c
+          name: 'CSV Archiver instance discovery'
+          type: TRAP
+          key: panos.csv.discovery
+          delay: '0'
+          allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+          lifetime: 45d
+          description: 'Receives the complete instance registry as JSON from the shared batch script.'
+          item_prototypes:
+            - uuid: 7c5b14c950b041b388ecf74e5d3fb667
+              name: 'CSV Archiver [{#INSTANCE}]: Archives created'
+              type: TRAP
+              key: 'panos.csv.archive.count[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: eac0fedbed3d432fb22875fc5716b871
+              name: 'CSV Archiver [{#INSTANCE}]: Invalid archives set aside'
+              type: TRAP
+              key: 'panos.csv.archive.invalid[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'Incomplete or foreign archives renamed to *.7z.invalid-<epoch> during recovery. They are never deleted automatically'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: cd34f2c93d824dbe87ea594978609673
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.archive.invalid[{#INSTANCE}])>0'
+                  name: 'CSV Archiver [{#INSTANCE}]: Invalid archives set aside, manual review needed'
+                  priority: WARNING
+                  description: 'Recovery found an archive that was incomplete or did not match its CSV. It was renamed to *.7z.invalid-<epoch> and the CSV was archived again. Check and delete the renamed file manually.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: b11dd5099a2345cc8d25a13d20dd1c3f
+              name: 'CSV Archiver [{#INSTANCE}]: Last archive size'
+              type: TRAP
+              key: 'panos.csv.archive.last.size[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: B
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: defc2829944f4ad188b6ec108f7a5069
+              name: 'CSV Archiver [{#INSTANCE}]: Oldest archived day'
+              type: TRAP
+              key: 'panos.csv.archive.oldest[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: unixtime
+              description: 'Local midnight of the oldest day folder containing archives (0 = none). Used to plan manual rotation'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: b7e19ce011684edfbb98386428d4ab7b
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.archive.oldest[{#INSTANCE}])>0 and (now()-last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.archive.oldest[{#INSTANCE}]))>{$PANOS.CSV.ARCHIVE.ROTATION.AGE}'
+                  name: 'CSV Archiver [{#INSTANCE}]: Archives older than retention, manual rotation due'
+                  priority: INFO
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: 6fed1f3216c1471997ae52dbd316a5e2
+              name: 'CSV Archiver [{#INSTANCE}]: Archive total files'
+              type: TRAP
+              key: 'panos.csv.archive.total.files[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'Number of .7z archives under the source directory'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 5c2e73bfd23b4d61bfab16062c81d686
+              name: 'CSV Archiver [{#INSTANCE}]: Archive total size'
+              type: TRAP
+              key: 'panos.csv.archive.total.size[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: B
+              description: 'Total size of all .7z archives under the source directory'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 99300eed6e51429baacd74e518b2eb82
+              name: 'CSV Archiver [{#INSTANCE}]: Bytes processed'
+              type: TRAP
+              key: 'panos.csv.bytes.processed[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: B
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 7250f41248e64e04a9b6dc0b43413a90
+              name: 'CSV Archiver [{#INSTANCE}]: Path guard detail'
+              type: TRAP
+              key: 'panos.csv.check.path.detail[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              value_type: TEXT
+              trends: '0'
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'Reason of the path guard decision'
+              tags:
+                - tag: component
+                  value: health
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 8edc607e693d4659a100a7f6dbc51640
+              name: 'CSV Archiver [{#INSTANCE}]: Path guard status'
+              type: TRAP
+              key: 'panos.csv.check.path[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: '1 paths accepted, 0 source or log directory rejected because not on a local disk'
+              valuemap:
+                name: 'CSV Archiver check result'
+              tags:
+                - tag: component
+                  value: health
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: f26e19ba8eb843ecb0670ad2eff3f0d3
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.path[{#INSTANCE}])=0'
+                  name: 'CSV Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+                  priority: HIGH
+                  description: 'The source or log directory is a UNC path, a network drive or a link to a remote target while ALLOW_REMOTE_PATHS=0. No file was touched. See item Path guard detail.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: ae82cc08c7694d5bbfab58121f3b8c21
+              name: 'CSV Archiver [{#INSTANCE}]: Prerequisites detail'
+              type: TRAP
+              key: 'panos.csv.check.prereq.detail[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              value_type: TEXT
+              trends: '0'
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'OK or list of missing / not executable programs'
+              tags:
+                - tag: component
+                  value: health
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 503c87018fca46788861f95c194019fc
+              name: 'CSV Archiver [{#INSTANCE}]: Prerequisites status'
+              type: TRAP
+              key: 'panos.csv.check.prereq[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: '1 all required programs available, 0 something missing (see Prerequisites detail)'
+              valuemap:
+                name: 'CSV Archiver check result'
+              tags:
+                - tag: component
+                  value: health
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 44760cbc22764c6f9d6ee5554d136e1a
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.prereq[{#INSTANCE}])=0'
+                  name: 'CSV Archiver [{#INSTANCE}]: Required programs missing'
+                  priority: HIGH
+                  description: 'The job cannot run: 7-Zip (or its options) or a required Windows program is missing or blocked. See item Prerequisites detail. A missing zabbix_sender does not stop the archiving: it raises No recent job metrics.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: 82d809838ece459fbc1d87bc41d85b4b
+              name: 'CSV Archiver [{#INSTANCE}]: Compression ratio'
+              type: TRAP
+              key: 'panos.csv.compression.ratio[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              value_type: FLOAT
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: '%'
+              description: 'Archive size as a percentage of the original CSV size, for the files archived in the last run (not sent when no file was archived)'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 3dcc8c2cef2d4ad5babf246fd8f85fb9
+              name: 'CSV Archiver [{#INSTANCE}]: Last complete day'
+              type: TRAP
+              key: 'panos.csv.day.date[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: unixtime
+              description: 'Local midnight of the day counted by "Files of the last complete day"'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: cbf5b798363048f590efaf1d268abef1
+              name: 'CSV Archiver [{#INSTANCE}]: Files of the last complete day'
+              type: TRAP
+              key: 'panos.csv.day.files[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'Archives in the day folder of the most recent complete day (see DAY_COUNT_LAG_DAYS and DAY_COMPLETE_HOUR in the script). Sent at every run.'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 0ffe19307de2478b809001e409cf26f3
+                  expression: 'avg(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.day.files[{#INSTANCE}],{$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}:now-1d)>0 and last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.day.files[{#INSTANCE}])<avg(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.day.files[{#INSTANCE}],{$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}:now-1d)*(100-{$PANOS.CSV.DAY.FILES.CHANGE.PCT:"{#INSTANCE}"})/100'
+                  name: 'CSV Archiver [{#INSTANCE}]: Daily CSV files decreased by more than {$PANOS.CSV.DAY.FILES.CHANGE.PCT:"{#INSTANCE}"}%'
+                  event_name: 'CSV Archiver [{#INSTANCE}]: Daily CSV files decreased: {ITEM.LASTVALUE1} vs average {{?avg(/{HOST.HOST}/panos.csv.day.files[{#INSTANCE}],{$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}:now-1d)}.fmtnum(0)}'
+                  opdata: 'Files: {ITEM.LASTVALUE1}'
+                  priority: WARNING
+                  description: 'The number of files of the last complete day is much lower than the average of the previous days ({$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}). 0 files means that the export of the firewall did not arrive or was not archived.'
+                  dependencies:
+                    - name: 'CSV Archiver [{#INSTANCE}]: No new CSV files for {$PANOS.CSV.NO.FILES.MAX.AGE:"{#INSTANCE}"}'
+                      expression: 'max(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.files.processed[{#INSTANCE}],{$PANOS.CSV.NO.FILES.MAX.AGE:"{#INSTANCE}"})=0 and count(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.files.processed[{#INSTANCE}],#1:now-{$PANOS.CSV.NO.FILES.MAX.AGE:"{#INSTANCE}"})=1'
+                    - name: 'CSV Archiver [{#INSTANCE}]: No recent job metrics'
+                      expression: 'nodata(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}],{$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"})=1'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+                - uuid: 5af1f9e18e62472682220fc5b2f5b745
+                  expression: 'avg(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.day.files[{#INSTANCE}],{$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}:now-1d)>0 and last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.day.files[{#INSTANCE}])>avg(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.day.files[{#INSTANCE}],{$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}:now-1d)*(100+{$PANOS.CSV.DAY.FILES.CHANGE.PCT:"{#INSTANCE}"})/100'
+                  name: 'CSV Archiver [{#INSTANCE}]: Daily CSV files increased by more than {$PANOS.CSV.DAY.FILES.CHANGE.PCT:"{#INSTANCE}"}%'
+                  event_name: 'CSV Archiver [{#INSTANCE}]: Daily CSV files increased: {ITEM.LASTVALUE1} vs average {{?avg(/{HOST.HOST}/panos.csv.day.files[{#INSTANCE}],{$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}:now-1d)}.fmtnum(0)}'
+                  opdata: 'Files: {ITEM.LASTVALUE1}'
+                  priority: WARNING
+                  description: 'The number of files of the last complete day is much higher than the average of the previous days ({$PANOS.CSV.DAY.FILES.BASELINE:"{#INSTANCE}"}). Possible causes: traffic peak, attack, new rules or logging profiles.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: baa7f938a3d941bb9675ff5c4e6b833f
+              name: 'CSV Archiver [{#INSTANCE}]: Destination free space'
+              type: TRAP
+              key: 'panos.csv.disk.free[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: B
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: fa61b1d13e134df6b205710649b1a3bd
+              name: 'CSV Archiver [{#INSTANCE}]: Source disk free space in %'
+              type: TRAP
+              key: 'panos.csv.disk.pfree[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              value_type: FLOAT
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: '%'
+              description: 'Free space of the source volume as a percentage of its total size'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 7077bb3d9a144f91ac9c6138c89b6c25
+                  expression: 'nodata(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.disk.pfree[{#INSTANCE}],{$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"})=1'
+                  name: 'CSV Archiver [{#INSTANCE}]: Disk usage data missing'
+                  priority: WARNING
+                  description: 'The job runs but does not report the free space percentage: fsutil failed or is not allowed for the account running the task. The disk space alert cannot work.'
+                  dependencies:
+                    - name: 'CSV Archiver [{#INSTANCE}]: No recent job metrics'
+                      expression: 'nodata(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}],{$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"})=1'
+                    - name: 'CSV Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.path[{#INSTANCE}])=0'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+                - uuid: 4bd0916afb3441c4819b5f1afbebbfb1
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.disk.pfree[{#INSTANCE}])<{$PANOS.CSV.DISK.MIN.PFREE:"{#INSTANCE}"}'
+                  name: 'CSV Archiver [{#INSTANCE}]: Source disk free space below {$PANOS.CSV.DISK.MIN.PFREE:"{#INSTANCE}"}%'
+                  opdata: 'Free: {ITEM.LASTVALUE1}'
+                  priority: WARNING
+                  description: 'A file is archived only if its size plus DISK_RESERVE_BYTES is available: plan a manual rotation.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: f1088ab95c794193b4aa92c94bf67951
+              name: 'CSV Archiver [{#INSTANCE}]: Source disk total size'
+              type: TRAP
+              key: 'panos.csv.disk.total[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: B
+              description: 'Total size of the volume holding the source directory (fsutil volume diskfree)'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 2b314d4ec7c94d82bababcf905dd6e8c
+              name: 'CSV Archiver [{#INSTANCE}]: Files deferred'
+              type: TRAP
+              key: 'panos.csv.files.deferred[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'CSV files left for the next run because modified too recently (upload in progress)'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: e823b997d3ea41e8a586d6149773b2a7
+              name: 'CSV Archiver [{#INSTANCE}]: Files failed'
+              type: TRAP
+              key: 'panos.csv.files.failed[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 7bc1ff7a175843ac81cc0cd408e84602
+              name: 'CSV Archiver [{#INSTANCE}]: Files found'
+              type: TRAP
+              key: 'panos.csv.files.found[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 11d627191e744e13935e209d843f3452
+              name: 'CSV Archiver [{#INSTANCE}]: Files orphaned'
+              type: TRAP
+              key: 'panos.csv.files.orphaned[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'CSV files still present inside day folders after the automatic recovery attempt of the run'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 63b4dedd206a4c7498530fda1eb85eca
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.files.orphaned[{#INSTANCE}])>0'
+                  name: 'CSV Archiver [{#INSTANCE}]: CSV files left inside archive folders'
+                  priority: WARNING
+                  description: 'CSV files remain inside archive folders after the automatic recovery of this run (archive again, or set aside an invalid archive). Review the local log and report\FAILED-JOB.txt in the day folder.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: 78fde2ef207a4146a0536572d4c8ce30
+              name: 'CSV Archiver [{#INSTANCE}]: Files pending'
+              type: TRAP
+              key: 'panos.csv.files.pending[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: ef89c84245b84f8595b7aa045be99880
+                  expression: 'count(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.files.pending[{#INSTANCE}],#2,"gt",{$PANOS.CSV.PENDING.MAX:"{#INSTANCE}"})=2'
+                  name: 'CSV Archiver [{#INSTANCE}]: Source files pending on two consecutive runs'
+                  priority: WARNING
+                  description: 'CSV files are still in the source directory after two runs (failed, deferred or arriving continuously).'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: b09fcd5d1ed245489e66ff6dc27a2f09
+              name: 'CSV Archiver [{#INSTANCE}]: Files processed'
+              type: TRAP
+              key: 'panos.csv.files.processed[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'CSV files archived by the run'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 5d0c1c6f0b0e4a55a3f7a2b1c9e84d10
+                  expression: 'max(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.files.processed[{#INSTANCE}],{$PANOS.CSV.NO.FILES.MAX.AGE:"{#INSTANCE}"})=0 and count(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.files.processed[{#INSTANCE}],#1:now-{$PANOS.CSV.NO.FILES.MAX.AGE:"{#INSTANCE}"})=1'
+                  name: 'CSV Archiver [{#INSTANCE}]: No new CSV files for {$PANOS.CSV.NO.FILES.MAX.AGE:"{#INSTANCE}"}'
+                  priority: HIGH
+                  description: 'The job runs but no run has archived a file for {$PANOS.CSV.NO.FILES.MAX.AGE:"{#INSTANCE}"}: no new CSV reaches the source folder. Check the scheduled log export of the firewall, the FTP service and the network path to this server. Not evaluated until the instance has data older than this period. Adjust per instance with a context macro (maximum 30d, the item history).'
+                  dependencies:
+                    - name: 'CSV Archiver [{#INSTANCE}]: Last execution failed'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}])=0'
+                    - name: 'CSV Archiver [{#INSTANCE}]: No recent job metrics'
+                      expression: 'nodata(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}],{$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"})=1'
+                    - name: 'CSV Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.path[{#INSTANCE}])=0'
+                    - name: 'CSV Archiver [{#INSTANCE}]: Required programs missing'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.prereq[{#INSTANCE}])=0'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: fec0936951f549ad91e355ace77546f8
+              name: 'CSV Archiver [{#INSTANCE}]: Files recovered'
+              type: TRAP
+              key: 'panos.csv.files.recovered[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'CSV files left inside day folders by an interrupted run and completed by this run'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 891d637e1536420b9f75c527cd91c055
+              name: 'CSV Archiver [{#INSTANCE}]: Job duration'
+              type: TRAP
+              key: 'panos.csv.job.duration[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: s
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 91723f6e13eb45dda586c137e3ceb69f
+              name: 'CSV Archiver [{#INSTANCE}]: Job exit code'
+              type: TRAP
+              key: 'panos.csv.job.exitcode[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: e7216c19d0d74ffba00d20d4adb22fc2
+              name: 'CSV Archiver [{#INSTANCE}]: Last run'
+              type: TRAP
+              key: 'panos.csv.job.last.run[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: unixtime
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 745d80598717467c9c94d3311e82e87a
+                  expression: 'fuzzytime(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.last.run[{#INSTANCE}],{$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"})=0'
+                  name: 'CSV Archiver [{#INSTANCE}]: No completed execution within {$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"}'
+                  priority: HIGH
+                  description: 'Runs start (or nothing arrives) but none reaches the end: the task is not scheduled any more, or every run is killed before its final report.'
+                  dependencies:
+                    - name: 'CSV Archiver [{#INSTANCE}]: No recent job metrics'
+                      expression: 'nodata(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}],{$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"})=1'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: 67283939641149b7bf364c0cb0444fdd
+              name: 'CSV Archiver [{#INSTANCE}]: Last success'
+              type: TRAP
+              key: 'panos.csv.job.last.success[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: unixtime
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 0d244d301f28468e95a0997c36f116fd
+                  expression: 'fuzzytime(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.last.success[{#INSTANCE}],{$PANOS.CSV.JOB.SUCCESS.MAX.AGE:"{#INSTANCE}"})=0'
+                  name: 'CSV Archiver [{#INSTANCE}]: No successful execution within expected period'
+                  priority: HIGH
+                  description: 'The last successful run is older than {$PANOS.CSV.JOB.SUCCESS.MAX.AGE:"{#INSTANCE}"}.'
+                  dependencies:
+                    - name: 'CSV Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.path[{#INSTANCE}])=0'
+                    - name: 'CSV Archiver [{#INSTANCE}]: Required programs missing'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.prereq[{#INSTANCE}])=0'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: 8ef8c75e5af049008dc09c3d687c7dc6
+              name: 'CSV Archiver [{#INSTANCE}]: Job start'
+              type: TRAP
+              key: 'panos.csv.job.start[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: unixtime
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: cc81278bd544483e9b348dc7fb382050
+              name: 'CSV Archiver [{#INSTANCE}]: Job status'
+              type: TRAP
+              key: 'panos.csv.job.status[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: '0 Failed, 1 Success, 2 Partial, 3 Running'
+              valuemap:
+                name: 'CSV Archiver job status'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: 58c933e564494700935e8ca8ecdc342b
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}])=2'
+                  name: 'CSV Archiver [{#INSTANCE}]: Last execution completed partially'
+                  priority: WARNING
+                  description: 'Some files were archived, others failed. See item Last error and the local log.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+                - uuid: 9f752b262d3c4d66a6b4ffa81804297e
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}])=0'
+                  name: 'CSV Archiver [{#INSTANCE}]: Last execution failed'
+                  priority: HIGH
+                  description: 'No file could be archived, or the job stopped on a fatal error. See item Last error.'
+                  dependencies:
+                    - name: 'CSV Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.path[{#INSTANCE}])=0'
+                    - name: 'CSV Archiver [{#INSTANCE}]: Required programs missing'
+                      expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.check.prereq[{#INSTANCE}])=0'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+                - uuid: 907025700b474d4da3a5dac21142a0b5
+                  expression: 'nodata(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}],{$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"})=1'
+                  name: 'CSV Archiver [{#INSTANCE}]: No recent job metrics'
+                  priority: HIGH
+                  description: 'No data for {$PANOS.CSV.JOB.MAX.AGE:"{#INSTANCE}"}: the scheduled task is not running, zabbix_sender is missing or the Zabbix server is unreachable.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: cca9a57967ce476fae504418ddd8827d
+              name: 'CSV Archiver [{#INSTANCE}]: Last error'
+              type: TRAP
+              key: 'panos.csv.last.error[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              value_type: TEXT
+              trends: '0'
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: 'Sanitized error summary'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: 3459ba94af954defa77db20fdf67e97a
+              name: 'CSV Archiver [{#INSTANCE}]: Script version'
+              type: TRAP
+              key: 'panos.csv.script.version[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              value_type: CHAR
+              trends: '0'
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              tags:
+                - tag: component
+                  value: health
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+            - uuid: eda77008e7bc46259eb58aa586c568db
+              name: 'CSV Archiver [{#INSTANCE}]: Previous sender status'
+              type: TRAP
+              key: 'panos.csv.sender.status[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              description: '0 failed, 1 successful'
+              valuemap:
+                name: 'CSV Archiver check result'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+              trigger_prototypes:
+                - uuid: ae0ee0d3dd194bc99d81de7a7a5431e3
+                  expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.sender.status[{#INSTANCE}])=0'
+                  name: 'CSV Archiver [{#INSTANCE}]: Previous final sender transmission failed'
+                  priority: WARNING
+                  description: 'The previous run could not deliver its final metrics to Zabbix.'
+                  tags:
+                    - tag: template
+                      value: Pan-OS-CSV-Archiver
+            - uuid: a948cbad3e444afeab6b66ca7e917821
+              name: 'CSV Archiver [{#INSTANCE}]: Oldest pending CSV age'
+              type: TRAP
+              key: 'panos.csv.source.oldest.age[{#INSTANCE}]'
+              delay: '0'
+              history: 30d
+              allowed_hosts: '{$PANOS.CSV.ALLOWED.HOSTS}'
+              units: s
+              description: 'Age of the oldest CSV still in the source directory at the end of the run (0 = none)'
+              tags:
+                - tag: component
+                  value: job
+                - tag: instance
+                  value: '{#INSTANCE}'
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+          trigger_prototypes:
+            - uuid: 7b3b47be61d14831a7451dc70c422961
+              expression: 'last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.status[{#INSTANCE}])=3 and (now()-last(/PAN-OS CSV Archiver by Zabbix trapper/panos.csv.job.start[{#INSTANCE}]))>{$PANOS.CSV.JOB.MAX.DURATION:"{#INSTANCE}"}'
+              name: 'CSV Archiver [{#INSTANCE}]: Job running too long'
+              priority: HIGH
+              description: 'The job reported Running for longer than {$PANOS.CSV.JOB.MAX.DURATION:"{#INSTANCE}"}, or it was killed before sending its final status.'
+              tags:
+                - tag: template
+                  value: Pan-OS-CSV-Archiver
+      tags:
+        - tag: class
+          value: backup
+        - tag: target
+          value: panos-csv-archiver
+      macros:
+        - macro: '{$PANOS.CSV.ALLOWED.HOSTS}'
+          value: '0.0.0.0/0,::/0'
+          description: 'Addresses allowed to send data (Zabbix trapper "Allowed hosts", CIDR allowed). Default = any address. Set it to the IP of the Windows server (or of the proxy). Must not be empty: an empty value rejects all data'
+        - macro: '{$PANOS.CSV.ARCHIVE.ROTATION.AGE}'
+          value: 365d
+          description: 'Age of the oldest archived day after which a manual rotation is due'
+        - macro: '{$PANOS.CSV.DAY.FILES.BASELINE}'
+          value: 7d
+          description: 'Period before the last day used as baseline for the daily file count'
+        - macro: '{$PANOS.CSV.DAY.FILES.CHANGE.PCT}'
+          value: '50'
+          description: 'Change of the daily file count, in percent of the baseline average, that raises an alarm'
+        - macro: '{$PANOS.CSV.DISK.MIN.PFREE}'
+          value: '10'
+          description: 'Free space warning threshold on the source volume, in percent of its size'
+        - macro: '{$PANOS.CSV.JOB.MAX.AGE}'
+          value: 26h
+          description: 'Maximum time without any metric from the job'
+        - macro: '{$PANOS.CSV.JOB.MAX.DURATION}'
+          value: 8h
+          description: 'Maximum duration of a run. Traffic logs (1500-1800 files of 40-50 MB a day) need hours: adjust per instance with a context macro, e.g. {$PANOS.CSV.JOB.MAX.DURATION:"fw01-wildfire"} = 1h'
+        - macro: '{$PANOS.CSV.JOB.SUCCESS.MAX.AGE}'
+          value: 26h
+          description: 'Maximum age of the last successful run'
+        - macro: '{$PANOS.CSV.NO.FILES.MAX.AGE}'
+          value: 3d
+          description: 'Maximum time without any archived CSV while the job keeps running (maximum 30d). Per instance: {$PANOS.CSV.NO.FILES.MAX.AGE:"fw01-wildfire"} = 14d'
+        - macro: '{$PANOS.CSV.PENDING.MAX}'
+          value: '0'
+          description: 'Files allowed to remain in the source directory on two consecutive runs'
+      valuemaps:
+        - uuid: 3e4db10c1e9f4e6990ccaa006a970cad
+          name: 'CSV Archiver check result'
+          mappings:
+            - value: '0'
+              newvalue: Failed
+            - value: '1'
+              newvalue: OK
+        - uuid: 43cf93c3f99b4738b47770a34a078db6
+          name: 'CSV Archiver job status'
+          mappings:
+            - value: '0'
+              newvalue: Failed
+            - value: '1'
+              newvalue: Success
+            - value: '2'
+              newvalue: Partial
+            - value: '3'
+              newvalue: Running

@@ -1,0 +1,771 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+  - uuid: cecc260486f2471cbf479fe4e9b5f240
+    name: Templates/Applications
+  templates:
+  - uuid: ea9987b4a03c46848f5b86fc8d7ec652
+    template: PAN-OS Config Archiver by Zabbix trapper
+    name: PAN-OS Config Archiver by Zabbix trapper
+    description: Discovery-based monitoring of the Panorama / firewall configuration archive jobs (panos_config_archiver.bat 1.0.0). Can be linked to the same host as PAN-OS CSV Archiver by Zabbix trapper.
+    vendor:
+      name: N1k0droid
+      version: 1.0.0
+    groups:
+    - name: Templates/Applications
+    discovery_rules:
+    - uuid: fb1b0fd7a6da43d0a3712f3ce2af9637
+      name: Config Archiver instance discovery
+      type: TRAP
+      key: panos.cfg.discovery
+      delay: '0'
+      allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+      lifetime: 45d
+      description: Receives the complete instance registry as JSON from the shared batch script.
+      item_prototypes:
+      - uuid: 2cbcea91c95e4a45a763d17c3ebd8328
+        name: 'Config Archiver [{#INSTANCE}]: Archives created'
+        type: TRAP
+        key: panos.cfg.archive.count[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 943af6a590404c4bab4783f8c5c1c5cc
+        name: 'Config Archiver [{#INSTANCE}]: Invalid archives set aside'
+        type: TRAP
+        key: panos.cfg.archive.invalid[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: Incomplete or foreign archives renamed to *.7z.invalid-<epoch> during recovery. They are never deleted automatically
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: 7e3ace0504ed4100bba898b45bb70107
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.archive.invalid[{#INSTANCE}])>0
+          name: 'Config Archiver [{#INSTANCE}]: Invalid archives set aside, manual review needed'
+          priority: WARNING
+          description: Recovery found an archive that was incomplete or did not match its file. It was renamed to *.7z.invalid-<epoch> and the file was archived again. Check and delete the renamed file manually.
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 0d2b99d4e59543158fbfdbd845b22ba3
+        name: 'Config Archiver [{#INSTANCE}]: Last archive size'
+        type: TRAP
+        key: panos.cfg.archive.last.size[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: B
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 67b10f91725d4367933e81a1b8f169a5
+        name: 'Config Archiver [{#INSTANCE}]: Oldest archived day'
+        type: TRAP
+        key: panos.cfg.archive.oldest[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: unixtime
+        description: Local midnight of the oldest day folder containing archives (0 = none). Used to plan manual rotation
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: 0b08ba5ac2e34a1696b4e89dc85e32c2
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.archive.oldest[{#INSTANCE}])>0 and (now()-last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.archive.oldest[{#INSTANCE}]))>{$PANOS.CFG.ARCHIVE.ROTATION.AGE}
+          name: 'Config Archiver [{#INSTANCE}]: Archives older than retention, manual rotation due'
+          priority: INFO
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 602e493cd77b40b89153e6113c6050aa
+        name: 'Config Archiver [{#INSTANCE}]: Archive total files'
+        type: TRAP
+        key: panos.cfg.archive.total.files[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: Number of .7z archives under the archive directory
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 89bdb728a738403d9c3830743b1d88cf
+        name: 'Config Archiver [{#INSTANCE}]: Archive total size'
+        type: TRAP
+        key: panos.cfg.archive.total.size[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: B
+        description: Total size of all .7z archives under the archive directory
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 5eaa8e2867b2422ca083abad35008143
+        name: 'Config Archiver [{#INSTANCE}]: Bytes processed'
+        type: TRAP
+        key: panos.cfg.bytes.processed[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: B
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 597a3e56af2a4e1a9f77dd47fc8563ff
+        name: 'Config Archiver [{#INSTANCE}]: Path guard detail'
+        type: TRAP
+        key: panos.cfg.check.path.detail[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        value_type: TEXT
+        trends: '0'
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: Reason of the path guard decision
+        tags:
+        - tag: component
+          value: health
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 64d274398f084846bd10d3f3fb254872
+        name: 'Config Archiver [{#INSTANCE}]: Path guard status'
+        type: TRAP
+        key: panos.cfg.check.path[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: 1 paths accepted, 0 source or log directory rejected because not on a local disk
+        valuemap:
+          name: Config Archiver check result
+        tags:
+        - tag: component
+          value: health
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: 9d05619a41ad45e39344b959a654abc1
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.path[{#INSTANCE}])=0
+          name: 'Config Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+          priority: HIGH
+          description: The source or log directory is a UNC path, a network drive or a link to a remote target while ALLOW_REMOTE_PATHS=0. No file was touched. See item Path guard detail.
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 3ed862b673814e74ab0a9002fb1b9a2c
+        name: 'Config Archiver [{#INSTANCE}]: Prerequisites detail'
+        type: TRAP
+        key: panos.cfg.check.prereq.detail[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        value_type: TEXT
+        trends: '0'
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: OK or list of missing / not executable programs
+        tags:
+        - tag: component
+          value: health
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 5597b05a9940421bbc6086261a188edd
+        name: 'Config Archiver [{#INSTANCE}]: Prerequisites status'
+        type: TRAP
+        key: panos.cfg.check.prereq[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: 1 all required programs available, 0 something missing (see Prerequisites detail)
+        valuemap:
+          name: Config Archiver check result
+        tags:
+        - tag: component
+          value: health
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: a1d3e98596d64aa7900a75ec519f810c
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.prereq[{#INSTANCE}])=0
+          name: 'Config Archiver [{#INSTANCE}]: Required programs missing'
+          priority: HIGH
+          description: 'The job cannot run: 7-Zip (or its options) or a required Windows program is missing or blocked. See item Prerequisites detail. A missing zabbix_sender does not stop the archiving: it raises No recent job metrics.'
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: f4e877a7b4b84f0cb94c34f44c38ab51
+        name: 'Config Archiver [{#INSTANCE}]: Compression ratio'
+        type: TRAP
+        key: panos.cfg.compression.ratio[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: '%'
+        description: Archive size as a percentage of the original size, for the files archived in the last run (about 100% for formats stored without compression, e.g. tgz)
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 66480466357549af92e0723297411a93
+        name: 'Config Archiver [{#INSTANCE}]: Last complete day'
+        type: TRAP
+        key: panos.cfg.day.date[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: unixtime
+        description: Local midnight of the day counted by "Files of the last complete day"
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 736a755a5f7b42e4b0585c031765b53f
+        name: 'Config Archiver [{#INSTANCE}]: Files of the last complete day'
+        type: TRAP
+        key: panos.cfg.day.files[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: Archives in the day folder of the most recent complete day. Sent at every run.
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 3587b93682db43cf8498926944126559
+        name: 'Config Archiver [{#INSTANCE}]: Destination free space'
+        type: TRAP
+        key: panos.cfg.disk.free[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: B
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 91bfb38ff323466bb7cc991e5c3229fe
+        name: 'Config Archiver [{#INSTANCE}]: Source disk free space in %'
+        type: TRAP
+        key: panos.cfg.disk.pfree[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: '%'
+        description: Free space of the source volume as a percentage of its total size
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: 910b08d1a5d142c7a2920f081c973cf8
+          expression: nodata(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.disk.pfree[{#INSTANCE}],{$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"})=1
+          name: 'Config Archiver [{#INSTANCE}]: Disk usage data missing'
+          priority: WARNING
+          description: 'The job runs but does not report the free space percentage: fsutil failed or is not allowed for the account running the task. The disk space alert cannot work.'
+          dependencies:
+          - name: 'Config Archiver [{#INSTANCE}]: No recent job metrics'
+            expression: nodata(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}],{$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"})=1
+          - name: 'Config Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.path[{#INSTANCE}])=0
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+        - uuid: 5f5de488e1774d32a52661bbf6539089
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.disk.pfree[{#INSTANCE}])<{$PANOS.CFG.DISK.MIN.PFREE:"{#INSTANCE}"}
+          name: 'Config Archiver [{#INSTANCE}]: Source disk free space below {$PANOS.CFG.DISK.MIN.PFREE:"{#INSTANCE}"}%'
+          opdata: 'Free: {ITEM.LASTVALUE1}'
+          priority: WARNING
+          description: 'A file is archived only if its size plus DISK_RESERVE_BYTES is available: plan a manual rotation.'
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 67a0dbda8c9b48b99b4d07409347ee07
+        name: 'Config Archiver [{#INSTANCE}]: Source disk total size'
+        type: TRAP
+        key: panos.cfg.disk.total[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: B
+        description: Total size of the volume holding the source directory (fsutil volume diskfree)
+        tags:
+        - tag: component
+          value: storage
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 0bfc61999428461d9960d3a0c7fe2db7
+        name: 'Config Archiver [{#INSTANCE}]: Files deferred'
+        type: TRAP
+        key: panos.cfg.files.deferred[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: files left for the next run because modified too recently (upload in progress)
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 7b0e7b9adec347fbb06a60ab68ad6feb
+        name: 'Config Archiver [{#INSTANCE}]: Files failed'
+        type: TRAP
+        key: panos.cfg.files.failed[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 4716d80167574d36a31bb2afaa206eeb
+        name: 'Config Archiver [{#INSTANCE}]: Files found'
+        type: TRAP
+        key: panos.cfg.files.found[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 16ccbf81fd9b4a7889d70ecda39383d5
+        name: 'Config Archiver [{#INSTANCE}]: Files orphaned'
+        type: TRAP
+        key: panos.cfg.files.orphaned[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: files still present inside day folders after the automatic recovery attempt of the run
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: 84cb2c43fe6146cbb0fe50586da47900
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.files.orphaned[{#INSTANCE}])>0
+          name: 'Config Archiver [{#INSTANCE}]: files left inside archive folders'
+          priority: WARNING
+          description: files remain inside archive folders after the automatic recovery of this run (archive again, or set aside an invalid archive). Review the local log and report\FAILED-JOB.txt in the day folder.
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 8aab0b2bf5b540f5912107c3ca7c1ab7
+        name: 'Config Archiver [{#INSTANCE}]: Files pending'
+        type: TRAP
+        key: panos.cfg.files.pending[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: 8a18852ff1fa464f809864c9f4f27378
+          expression: count(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.files.pending[{#INSTANCE}],#2,"gt",{$PANOS.CFG.PENDING.MAX:"{#INSTANCE}"})=2
+          name: 'Config Archiver [{#INSTANCE}]: Source files pending on two consecutive runs'
+          priority: WARNING
+          description: files are still in the source directory after two runs (failed, deferred or arriving continuously).
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: bbf81372a5734a04b3cc7bdade7c3b8b
+        name: 'Config Archiver [{#INSTANCE}]: Files processed'
+        type: TRAP
+        key: panos.cfg.files.processed[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: files archived by the run
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: 9129c96e7c2b40b096ccf57e64b12f3f
+          expression: max(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.files.processed[{#INSTANCE}],{$PANOS.CFG.NO.FILES.MAX.AGE:"{#INSTANCE}"})=0 and count(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.files.processed[{#INSTANCE}],#1:now-{$PANOS.CFG.NO.FILES.MAX.AGE:"{#INSTANCE}"})=1
+          name: 'Config Archiver [{#INSTANCE}]: No new files for {$PANOS.CFG.NO.FILES.MAX.AGE:"{#INSTANCE}"}'
+          priority: HIGH
+          description: The job runs but no run has archived a configuration export for {$PANOS.CFG.NO.FILES.MAX.AGE:"{#INSTANCE}"}. Check the Scheduled Config Export of Panorama (or the export mechanism of the firewall), the FTP/SCP service and the network path to this server. Not evaluated until the instance has data older than this period. Adjust per instance with a context macro (maximum 30d, the item history).
+          dependencies:
+          - name: 'Config Archiver [{#INSTANCE}]: Last execution failed'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}])=0
+          - name: 'Config Archiver [{#INSTANCE}]: No recent job metrics'
+            expression: nodata(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}],{$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"})=1
+          - name: 'Config Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.path[{#INSTANCE}])=0
+          - name: 'Config Archiver [{#INSTANCE}]: Required programs missing'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.prereq[{#INSTANCE}])=0
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 63351e0db8624e71a9671dd9de9a2243
+        name: 'Config Archiver [{#INSTANCE}]: Files recovered'
+        type: TRAP
+        key: panos.cfg.files.recovered[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: files left inside day folders by an interrupted run and completed by this run
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 8c6cc2722c154e80b9001448a9b75123
+        name: 'Config Archiver [{#INSTANCE}]: Job duration'
+        type: TRAP
+        key: panos.cfg.job.duration[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: s
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 44fd1eb2c5744d54bf3efd76c28603a0
+        name: 'Config Archiver [{#INSTANCE}]: Job exit code'
+        type: TRAP
+        key: panos.cfg.job.exitcode[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: c352911d2fc94d33a52dcdd771c6ea99
+        name: 'Config Archiver [{#INSTANCE}]: Last run'
+        type: TRAP
+        key: panos.cfg.job.last.run[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: unixtime
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: b861fd7706164b68a48edf98f52012dd
+          expression: fuzzytime(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.last.run[{#INSTANCE}],{$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"})=0
+          name: 'Config Archiver [{#INSTANCE}]: No completed execution within {$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"}'
+          priority: HIGH
+          description: 'Runs start (or nothing arrives) but none reaches the end: the task is not scheduled any more, or every run is killed before its final report.'
+          dependencies:
+          - name: 'Config Archiver [{#INSTANCE}]: No recent job metrics'
+            expression: nodata(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}],{$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"})=1
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 601cf4a50198478da56ccf31d9683eaa
+        name: 'Config Archiver [{#INSTANCE}]: Last success'
+        type: TRAP
+        key: panos.cfg.job.last.success[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: unixtime
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: c3c97d3a911143a3a7cc4b4d8bbaaa01
+          expression: fuzzytime(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.last.success[{#INSTANCE}],{$PANOS.CFG.JOB.SUCCESS.MAX.AGE:"{#INSTANCE}"})=0
+          name: 'Config Archiver [{#INSTANCE}]: No successful execution within expected period'
+          priority: HIGH
+          description: The last successful run is older than {$PANOS.CFG.JOB.SUCCESS.MAX.AGE:"{#INSTANCE}"}.
+          dependencies:
+          - name: 'Config Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.path[{#INSTANCE}])=0
+          - name: 'Config Archiver [{#INSTANCE}]: Required programs missing'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.prereq[{#INSTANCE}])=0
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: de133adb4c694189bc857fad583eaa3f
+        name: 'Config Archiver [{#INSTANCE}]: Job start'
+        type: TRAP
+        key: panos.cfg.job.start[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: unixtime
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: 27b22570888a4f14bab9bc20c99f683b
+        name: 'Config Archiver [{#INSTANCE}]: Job status'
+        type: TRAP
+        key: panos.cfg.job.status[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: 0 Failed, 1 Success, 2 Partial, 3 Running
+        valuemap:
+          name: Config Archiver job status
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: b81b2a70de6141729b3c218841a163cd
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}])=2
+          name: 'Config Archiver [{#INSTANCE}]: Last execution completed partially'
+          priority: WARNING
+          description: Some files were archived, others failed. See item Last error and the local log.
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+        - uuid: 79fc3776c8274cb181bdee61b86cdb3e
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}])=0
+          name: 'Config Archiver [{#INSTANCE}]: Last execution failed'
+          priority: HIGH
+          description: No file could be archived, or the job stopped on a fatal error. See item Last error.
+          dependencies:
+          - name: 'Config Archiver [{#INSTANCE}]: Path rejected, not on a local disk'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.path[{#INSTANCE}])=0
+          - name: 'Config Archiver [{#INSTANCE}]: Required programs missing'
+            expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.check.prereq[{#INSTANCE}])=0
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+        - uuid: cc742a24ab8b4caf8fdc402dd1f8bd5f
+          expression: nodata(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}],{$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"})=1
+          name: 'Config Archiver [{#INSTANCE}]: No recent job metrics'
+          priority: HIGH
+          description: 'No data for {$PANOS.CFG.JOB.MAX.AGE:"{#INSTANCE}"}: the scheduled task is not running, zabbix_sender is missing or the Zabbix server is unreachable.'
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: 7c961e1c04e547119a89f0ecb085ef26
+        name: 'Config Archiver [{#INSTANCE}]: Last error'
+        type: TRAP
+        key: panos.cfg.last.error[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        value_type: TEXT
+        trends: '0'
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: Sanitized error summary
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: c58df0b7f9fc46f6b39708f2632a6783
+        name: 'Config Archiver [{#INSTANCE}]: Script version'
+        type: TRAP
+        key: panos.cfg.script.version[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        value_type: CHAR
+        trends: '0'
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        tags:
+        - tag: component
+          value: health
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      - uuid: f98487ffb05740ebbacc32360f47f86c
+        name: 'Config Archiver [{#INSTANCE}]: Previous sender status'
+        type: TRAP
+        key: panos.cfg.sender.status[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        description: 0 failed, 1 successful
+        valuemap:
+          name: Config Archiver check result
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+        trigger_prototypes:
+        - uuid: f604cc5914654e41a53e482e45c8c16b
+          expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.sender.status[{#INSTANCE}])=0
+          name: 'Config Archiver [{#INSTANCE}]: Previous final sender transmission failed'
+          priority: WARNING
+          description: The previous run could not deliver its final metrics to Zabbix.
+          tags:
+          - tag: template
+            value: Pan-OS-Config-Archiver
+      - uuid: fb20b0dbb9894478b2cd2c22ffc2d2ad
+        name: 'Config Archiver [{#INSTANCE}]: Oldest pending file age'
+        type: TRAP
+        key: panos.cfg.source.oldest.age[{#INSTANCE}]
+        delay: '0'
+        history: 30d
+        allowed_hosts: '{$PANOS.CFG.ALLOWED.HOSTS}'
+        units: s
+        description: Age of the oldest file still in the source directory at the end of the run (0 = none)
+        tags:
+        - tag: component
+          value: job
+        - tag: instance
+          value: '{#INSTANCE}'
+        - tag: template
+          value: Pan-OS-Config-Archiver
+      trigger_prototypes:
+      - uuid: 3cdd367a83a24f568d16e9d9984e0498
+        expression: last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.status[{#INSTANCE}])=3 and (now()-last(/PAN-OS Config Archiver by Zabbix trapper/panos.cfg.job.start[{#INSTANCE}]))>{$PANOS.CFG.JOB.MAX.DURATION:"{#INSTANCE}"}
+        name: 'Config Archiver [{#INSTANCE}]: Job running too long'
+        priority: HIGH
+        description: The job reported Running for longer than {$PANOS.CFG.JOB.MAX.DURATION:"{#INSTANCE}"}, or it was killed before sending its final status.
+        tags:
+        - tag: template
+          value: Pan-OS-Config-Archiver
+    tags:
+    - tag: class
+      value: backup
+    - tag: target
+      value: panos-config-archiver
+    macros:
+    - macro: '{$PANOS.CFG.ALLOWED.HOSTS}'
+      value: 0.0.0.0/0,::/0
+      description: 'Addresses allowed to send data (Zabbix trapper "Allowed hosts", CIDR allowed). Default = any address. Set it to the IP of the Windows server (or of the proxy). Must not be empty: an empty value rejects all data'
+    - macro: '{$PANOS.CFG.ARCHIVE.ROTATION.AGE}'
+      value: 365d
+      description: Age of the oldest archived day after which a manual rotation is due
+    - macro: '{$PANOS.CFG.DISK.MIN.PFREE}'
+      value: '10'
+      description: Free space warning threshold on the source volume, in percent of its size
+    - macro: '{$PANOS.CFG.JOB.MAX.AGE}'
+      value: 26h
+      description: Maximum time without any metric from the job
+    - macro: '{$PANOS.CFG.JOB.MAX.DURATION}'
+      value: 1h
+      description: 'Maximum duration of a run. Per instance: {$PANOS.CFG.JOB.MAX.DURATION:"panorama-config"} = 2h'
+    - macro: '{$PANOS.CFG.JOB.SUCCESS.MAX.AGE}'
+      value: 26h
+      description: Maximum age of the last successful run
+    - macro: '{$PANOS.CFG.NO.FILES.MAX.AGE}'
+      value: 2d
+      description: 'Maximum time without any archived configuration export while the job keeps running (maximum 30d). Per instance: {$PANOS.CFG.NO.FILES.MAX.AGE:"fw01-config"} = 7d'
+    - macro: '{$PANOS.CFG.PENDING.MAX}'
+      value: '0'
+      description: Files allowed to remain in the source directory on two consecutive runs
+    valuemaps:
+    - uuid: 62f14eeda99a4a409fee39edfb1dc2e7
+      name: Config Archiver check result
+      mappings:
+      - value: '0'
+        newvalue: Failed
+      - value: '1'
+        newvalue: OK
+    - uuid: e65318202d494e48bbdc52c0efffb3b5
+      name: Config Archiver job status
+      mappings:
+      - value: '0'
+        newvalue: Failed
+      - value: '1'
+        newvalue: Success
+      - value: '2'
+        newvalue: Partial
+      - value: '3'
+        newvalue: Running

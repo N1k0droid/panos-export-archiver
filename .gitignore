@@ -1,0 +1,8 @@
+# Local runtime files (never published)
+release/
+results/
+*.log
+*.registry
+*.registry.lock
+*.lock
+*.tmp
